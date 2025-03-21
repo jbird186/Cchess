@@ -4,13 +4,18 @@
 #include "types.h"
 
 // Create a new PlyContext of a board in its default state, and white to play
-PlyContext new_context();
+void new_context(PlyContext *context);
 
 // Create an empty board, except for the given piece, which is assigned to white (ID = 0)
-PlyContext new_precomp_context(Piece piece, bool is_white);
+void new_precomp_context(PlyContext *context, Piece piece, bool is_white);
 
-// Create a branch where some move occurs.
-// Updates the context accordingly.
-PlyContext create_context_branch(PlyContext context, Move move);
+// Updates the context such that the given move is played
+void update_context(PlyContext *context, Move move);
+
+// Copy a PlyContext
+void copy_context(PlyContext *from, PlyContext *to);
+
+// Copy a PlyContext, such that the given move is played on branch
+void new_context_branch(PlyContext *original, PlyContext *branch, Move move);
 
 #endif

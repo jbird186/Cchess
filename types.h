@@ -98,9 +98,4 @@ typedef struct {
     ContextHash hash;
 } PlyContext;
 
-// Update pointers to our_pieces and opponent_pieces
-#define UPDATE_POINTERS(context) { \
-    context.our_pieces = context.is_white ? context.white_pieces : context.black_pieces; \
-    context.opponent_pieces = context.is_white ? context.black_pieces : context.white_pieces; \
-}
 #endif

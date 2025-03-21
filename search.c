@@ -58,8 +58,7 @@ BestMove _get_best_move_ab(PlyContext *context, BestMoveCache *cache, int32_t de
     int32_t score = LOSS_VALUE * 2;
     PlyContext branch;
     for (int i = 0; i < legal_moves.n_moves; i++) {
-        branch = create_context_branch(*(context), legal_moves.moves[i]);
-        UPDATE_POINTERS(branch)
+        new_context_branch(context, &branch, legal_moves.moves[i]);
 
         BestMove opponent_best = _get_best_move_ab(&branch, cache, depth - 1, -ceiling, -floor);
         int32_t branch_score = -opponent_best.score;

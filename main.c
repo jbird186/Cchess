@@ -27,8 +27,8 @@ int main(int argc, char **argv) {
     init();
 
     int arg_i = 1;
-    PlyContext context = new_context();
-    UPDATE_POINTERS(context)
+    PlyContext context;
+    new_context(&context);
     BestMoveCache cache = new_lookup_table();
 
     char (*move_hist)[6] = malloc(sizeof(char) * 6 * 1024);
@@ -130,8 +130,7 @@ int main(int argc, char **argv) {
             }
 
             hist_len -= depth;
-            context = context_hist[hist_len];
-            UPDATE_POINTERS(context)
+            copy_context(&context_hist[hist_len], &context);
             printf("%u move%s sucessfully undone:", depth, depth == 1 ? "" : "s");
             for (int i = hist_len + depth; i > hist_len; i--) {
                 printf(" %s", move_hist[i - 1]);
@@ -190,8 +189,7 @@ int main(int argc, char **argv) {
                 PlyContext branch;
                 uint64_t branch_nodes;
                 for (int i = 0; i < legal_moves.n_moves; i++) {
-                    branch = create_context_branch(context, legal_moves.moves[i]);
-                    UPDATE_POINTERS(branch)
+                    new_context_branch(&context, &branch, legal_moves.moves[i]);
                     branch_nodes = perft(&branch, depth - 1);
                     printf("\t%s: %lu nodes\n", legal_move_codes[i], branch_nodes);
                     nodes += branch_nodes;
@@ -255,8 +253,7 @@ int main(int argc, char **argv) {
             printf(" %s\n\n", move_hist[hist_len]);
             hist_len++;
 
-            context = create_context_branch(context, best_move.move);
-            UPDATE_POINTERS(context)
+            update_context(&context, best_move.move);
             continue;
         }
 
@@ -269,8 +266,7 @@ int main(int argc, char **argv) {
                 context_hist[hist_len] = context;
                 strcpy(move_hist[hist_len++], input);
 
-                context = create_context_branch(context, legal_moves.moves[i]);
-                UPDATE_POINTERS(context)
+                update_context(&context, legal_moves.moves[i]);
                 printf("\n");
                 break;
             }

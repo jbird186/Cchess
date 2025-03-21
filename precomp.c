@@ -29,8 +29,8 @@ uint8_t QUEEN_POSSIBLE_N_MOVES_TABLE[64];
     for (int y = (start_y); y <= (end_y); y++) { \
         for (int x = 0; x <= 7; x++) { \
             Piece piece = {(piece_type), x, y}; \
-            PlyContext context = new_precomp_context(piece, (is_white)); \
-            UPDATE_POINTERS(context) \
+            PlyContext context; \
+            new_precomp_context(&context, piece, (is_white)); \
             \
             (attack_table_name)[(y << 3) + x] = get_our_attack_bb(&context); \
             MoveList move_list = pseudo_legal_move_gen(&context, 0); \

@@ -350,8 +350,8 @@ bool is_legal_state(PlyContext *context) {
 
 bool is_in_check(PlyContext *context) {
     // Flip the perspective of the PlyContext from white to black or vice versa
-    PlyContext opponent_context = create_context_branch(*(context), NULL_MOVE);
-    UPDATE_POINTERS(opponent_context)
+    PlyContext opponent_context;
+    new_context_branch(context, &opponent_context, NULL_MOVE);
     return !is_legal_state(&opponent_context);
 }
 
@@ -363,8 +363,7 @@ MoveList filter_legal_pseudo_moves(PlyContext *context, MoveList move_list) {
     PlyContext branch;
 
     for (int i = 0; i < move_list.n_moves; i++) {
-        branch = create_context_branch(*(context), move_list.moves[i]);
-        UPDATE_POINTERS(branch)
+        new_context_branch(context, &branch, move_list.moves[i]);
         if (is_legal_state(&branch)) {
             moves[n_moves++] = move_list.moves[i];
         }
@@ -409,8 +408,8 @@ uint64_t get_our_attack_bb(PlyContext *context) {
 
 uint64_t get_opponent_attack_bb(PlyContext *context) {
     // Flip the perspective of the PlyContext from white to black or vice versa
-    PlyContext branch = create_context_branch(*(context), NULL_MOVE);
-    UPDATE_POINTERS(branch)
+    PlyContext branch;
+    new_context_branch(context, &branch, NULL_MOVE);
     return get_our_attack_bb(&branch);
 }
 
@@ -479,8 +478,8 @@ uint64_t perft(PlyContext *context, uint8_t depth) {
     PlyContext branch;
     uint64_t total = 0;
     for (int i = 0; i < legal_moves.n_moves; i++) {
-        branch = create_context_branch(*context, legal_moves.moves[i]);
-        UPDATE_POINTERS(branch)
+        PlyContext branch;
+        new_context_branch(context, &branch, legal_moves.moves[i]);
         total += perft(&branch, depth - 1);
     }
     free(legal_moves.moves);
