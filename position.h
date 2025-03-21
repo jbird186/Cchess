@@ -13,6 +13,4 @@
 
 #define GET_MOVE_BB_MASK(move) GET_POS_BB_MASK(GET_MOVE_POS(move))
 
-uint64_t get_move_list_bb_mask(MoveList move_list);
-
 #endif

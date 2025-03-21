@@ -9,6 +9,13 @@
 #include "search.h"
 #include "eval.h"
 #include "config.h"
+#include "precomp.h"
+#include "hash.h"
+
+void init() {
+    init_precomp();
+    init_hashing();
+}
 
 void clear_input_buffer() {
     char c;
@@ -17,15 +24,19 @@ void clear_input_buffer() {
 
 // TODO: Draws
 int main(int argc, char **argv) {
+    init();
+
     int arg_i = 1;
     PlyContext context = new_context();
     UPDATE_POINTERS(context)
+    BestMoveCache cache = new_lookup_table();
 
     char (*move_hist)[6] = malloc(sizeof(char) * 6 * 1024);
     PlyContext *context_hist = malloc(sizeof(PlyContext) * 1024);
     uint32_t hist_len = 0;
 
     MoveList legal_moves;
+    legal_moves.moves = NULL;
     char (*legal_move_codes)[6] = malloc(sizeof(char) * 6 * 1024);
 
     bool auto_play_white = false, auto_play_black = false;
@@ -34,9 +45,10 @@ int main(int argc, char **argv) {
         char input[256] = "";
         display_as_white = lock_display ? display_as_white : context.is_white;
         print_board(&context, display_as_white);
+        // printf("HASH: %lu %lu\n", context.hash.alpha, context.hash.beta);
 
         free(legal_moves.moves);
-        MoveList legal_moves = get_all_legal_moves(context);
+        MoveList legal_moves = get_all_legal_moves(&context);
         for (int i = 0; i < legal_moves.n_moves; i++) {
             Piece piece = context.our_pieces[legal_moves.moves[i].piece_id];
 
@@ -176,11 +188,11 @@ int main(int argc, char **argv) {
                 }
 
                 PlyContext branch;
-                uint64_t branch_nodes = perft(branch, depth - 1);
+                uint64_t branch_nodes;
                 for (int i = 0; i < legal_moves.n_moves; i++) {
                     branch = create_context_branch(context, legal_moves.moves[i]);
                     UPDATE_POINTERS(branch)
-                    branch_nodes = perft(branch, depth - 1);
+                    branch_nodes = perft(&branch, depth - 1);
                     printf("\t%s: %lu nodes\n", legal_move_codes[i], branch_nodes);
                     nodes += branch_nodes;
                 }
@@ -209,7 +221,7 @@ int main(int argc, char **argv) {
         if ((strcmp(input, "play") == 0) || should_auto_play) {
             printf("Computer is thinking...");
             fflush(stdout);
-            BestMove best_move = get_best_move_ab(&context, MOVE_SEARCH_DEPTH);
+            BestMove best_move = get_best_move_ab(&context, &cache, MOVE_SEARCH_DEPTH);
 
             Piece piece = context.our_pieces[best_move.move.piece_id];
 
@@ -273,6 +285,7 @@ int main(int argc, char **argv) {
     }
     printf("\n\n");
 
+    free(cache.entries);
     free(context_hist);
     free(move_hist);
     free(legal_moves.moves);

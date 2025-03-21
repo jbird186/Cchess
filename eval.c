@@ -3,6 +3,7 @@
 #include "eval.h"
 #include "config.h"
 #include "movegen.h"
+#include "precomp.h"
 
 int32_t get_piece_base_value(Piece piece) {
     switch (piece.type) {
@@ -21,22 +22,38 @@ int32_t get_piece_base_value(Piece piece) {
     }
 }
 
-int32_t evaluate_with(PlyContext *context, MoveList legal_moves) {
-    if (legal_moves.n_moves == 0) {
-        return is_in_check(context) ? LOSS_VALUE : DRAW_VALUE;
-    }
+int32_t get_pawn_y_bonus(uint8_t y, bool is_white) {
+    return PAWN_Y_VALUE_BONUS * (is_white ? y : 7 - y);
+}
 
-    int32_t total = N_LEGAL_MOVES_BONUS(legal_moves.n_moves);
+int32_t evaluate_material(PlyContext *context) {
+    int32_t total = 0;
     for (int i = 0; i < 16; i++) {
         total += get_piece_base_value(context->our_pieces[i]);
+        total += PIECE_POSSIBLE_MOVES_BONUS_MULTIPLIER * get_piece_possible_n_moves(context->our_pieces[i], context->is_white);
+        if (context->our_pieces[i].type == Pawn) {
+            total += get_pawn_y_bonus(context->our_pieces[i].y, context->is_white);
+        }
+
         total -= get_piece_base_value(context->opponent_pieces[i]);
+        total -= PIECE_POSSIBLE_MOVES_BONUS_MULTIPLIER * get_piece_possible_n_moves(context->opponent_pieces[i], !context->is_white);
+        if (context->opponent_pieces[i].type == Pawn) {
+            total -= get_pawn_y_bonus(context->opponent_pieces[i].y, !context->is_white);
+        }
     }
     return total;
 }
 
+int32_t evaluate_with(PlyContext *context, MoveList legal_moves) {
+    if (legal_moves.n_moves == 0) {
+        return is_in_check(context) ? LOSS_VALUE : DRAW_VALUE;
+    }
+    return evaluate_material(context);
+}
+
 int32_t evaluate(PlyContext *context) {
-    MoveList legal_moves = get_all_legal_moves(*(context));
-    int32_t score = evaluate_with(context, legal_moves);
-    free(legal_moves.moves);
-    return score;
+    if (!has_legal_move(context)) {
+        return is_in_check(context) ? LOSS_VALUE : DRAW_VALUE;
+    }
+    return evaluate_material(context);
 }

@@ -20,7 +20,6 @@ typedef struct {
     uint8_t type;
     uint8_t x;
     uint8_t y;
-    bool has_moved;
 } Piece;
 
 typedef enum {
@@ -44,7 +43,6 @@ typedef enum {
 
     // Null move
     NullMove = 9,
-
 } MoveType;
 
 typedef struct {
@@ -67,10 +65,20 @@ typedef struct {
 } MoveList;
 
 typedef struct {
+    int64_t alpha;
+    int64_t beta;
+} ContextHash;
+
+typedef struct {
     // White pieces
     Piece white_pieces[16];
     // Black pieces
     Piece black_pieces[16];
+    // Castling rights
+    bool white_can_castle_queen_side;
+    bool white_can_castle_king_side;
+    bool black_can_castle_queen_side;
+    bool black_can_castle_king_side;
     // The most recent move
     Move prev_move;
     // If true, it is white's turn, otherwise it is black's turn
@@ -86,12 +94,13 @@ typedef struct {
     uint64_t our_bb;
     // Bitboard for opponent pieces
     uint64_t opponent_bb;
+
+    ContextHash hash;
 } PlyContext;
 
-// Update
+// Update pointers to our_pieces and opponent_pieces
 #define UPDATE_POINTERS(context) { \
     context.our_pieces = context.is_white ? context.white_pieces : context.black_pieces; \
     context.opponent_pieces = context.is_white ? context.black_pieces : context.white_pieces; \
 }
-
 #endif

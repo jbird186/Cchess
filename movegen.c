@@ -4,6 +4,7 @@
 #include "context.h"
 #include "movegen.h"
 #include "position.h"
+#include "precomp.h"
 
 #define APPEND_PROMOTION_MOVES(piece_id, to_x, to_y) { \
     moves[n_moves++] = (Move){(piece_id), (to_x), (to_y), PromoteKnight}; \
@@ -19,8 +20,6 @@ MoveList get_pseudo_legal_moves_pawn(PlyContext *context, uint8_t piece_id) {
     uint8_t n_moves = 0;
     Move *moves = malloc(sizeof(Move) * PAWN_MAX_MOVES);
     Piece piece = context->our_pieces[piece_id];
-
-    bool is_first_move = !piece.has_moved;
 
     int8_t forward_one_y = context->is_white ? 1 : -1;
     int8_t forward_pos = context->is_white ? 8 : -8;
@@ -40,8 +39,9 @@ MoveList get_pseudo_legal_moves_pawn(PlyContext *context, uint8_t piece_id) {
 
             // Move 2 forward
             uint8_t forward_two_pos = forward_one_pos + forward_pos;
+            uint8_t start_rank = context->is_white ? 1 : 6;
             // Ensure that the pawn hasn't moved yet, and the space is empty
-            if (is_first_move && ((context->piece_bb & GET_POS_BB_MASK(forward_two_pos)) == 0)) {
+            if ((piece.y == start_rank) && ((context->piece_bb & GET_POS_BB_MASK(forward_two_pos)) == 0)) {
                 moves[n_moves++] = (Move){piece_id, piece.x, forward_y + forward_one_y, PawnDoubleMove};
             };
         }
@@ -268,39 +268,10 @@ MoveList get_pseudo_legal_moves_king(PlyContext *context, uint8_t piece_id) {
     return (MoveList){moves, n_moves};
 }
 
-#define GET_PSEUDO_LEGAL_MOVES_GENERIC(move_list, type, context, i) \
-    switch (type) { \
-        case King: \
-            (move_list) = get_pseudo_legal_moves_king(context, i); \
-            break; \
-        case Pawn: \
-            (move_list) = get_pseudo_legal_moves_pawn(context, i); \
-            break; \
-        case Knight: \
-            (move_list) = get_pseudo_legal_moves_knight(context, i); \
-            break; \
-        case Bishop: \
-            (move_list) = get_pseudo_legal_moves_bishop(context, i); \
-            break; \
-        case Rook: \
-            (move_list) = get_pseudo_legal_moves_rook(context, i); \
-            break; \
-        case Queen: \
-            (move_list) = get_pseudo_legal_moves_queen(context, i); \
-            break; \
-        default: \
-            continue; \
-    }
-
 // Adds all legal castling moves for the given color and opponent attack bitboard.
 MoveList get_legal_moves_castling(PlyContext *context, uint64_t opponent_attack_bb) {
     uint8_t n_moves = 0;
     Move *moves = malloc(sizeof(Move) * CASTLING_MAX_MOVES);
-
-    // Ensure that the king has not moved
-    if (context->our_pieces[4].has_moved) {
-        return (MoveList){moves, n_moves};
-    }
 
     uint64_t queen_side_castling_pieces_mask = context->is_white ?
         WHITE_QUEEN_SIDE_CASTLING_PIECES_MASK : BLACK_QUEEN_SIDE_CASTLING_PIECES_MASK;
@@ -313,7 +284,7 @@ MoveList get_legal_moves_castling(PlyContext *context, uint64_t opponent_attack_
     uint8_t back_rank_index = context->is_white ? 0 : 7;
 
     // Queen side castling
-    if (!context->our_pieces[0].has_moved
+    if ((context->is_white ? context->white_can_castle_queen_side : context->black_can_castle_queen_side)
         && ((context->piece_bb & queen_side_castling_pieces_mask) == 0)
         && ((opponent_attack_bb & queen_side_castling_attack_mask) == 0)
     ) {
@@ -321,7 +292,7 @@ MoveList get_legal_moves_castling(PlyContext *context, uint64_t opponent_attack_
     }
 
     // King side castling
-    if (!context->our_pieces[7].has_moved
+    if ((context->is_white ? context->white_can_castle_king_side : context->black_can_castle_king_side)
         && ((context->piece_bb & king_side_castling_pieces_mask) == 0)
         && ((opponent_attack_bb & king_side_castling_attack_mask) == 0)
     ) {
@@ -334,28 +305,46 @@ MoveList get_legal_moves_castling(PlyContext *context, uint64_t opponent_attack_
 // Checks whether a game state is legal.
 // This is used to separate the actually-legal moves from the pseudo-legal-but-not-actually-legal moves.
 bool is_legal_state(PlyContext *context) {
-    uint64_t white_bb = 0;
-    uint64_t white_attack_bb = 0;
-    uint64_t black_bb = 0;
-    uint64_t black_attack_bb = 0;
-
-    Piece piece;
-    MoveList move_list;
-    uint64_t our_attack_bb, movement_bb_mask;
-    Move move;
-
     uint64_t king_bb_mask = GET_PIECE_BB_MASK(context->opponent_pieces[4]);
-    // Iterate over all of the opponent's moves to see if they can "capture" our king
+    uint8_t forward_pos;
+    MoveList move_list;
+    Piece piece;
     for (int i = 0; i < 16; i++) {
-        GET_PSEUDO_LEGAL_MOVES_GENERIC(move_list, context->our_pieces[i].type, context, i)
-        movement_bb_mask = get_move_list_bb_mask(move_list);
-        free(move_list.moves);
-
-        if ((movement_bb_mask & king_bb_mask) != 0) {
-            return false;
+        piece = context->our_pieces[i];
+        if ((get_piece_possible_attack_bb(piece, context->is_white) & king_bb_mask) == 0) {
+            continue;
         }
-    }
 
+        // We have to handle pawn attacks manually,
+        // since they will not be detected if the space they are attacking is empty.
+        if (piece.type == Pawn) {
+            forward_pos = GET_PIECE_POS(piece) + (context->is_white ? 8 : -8);
+            if (piece.x != 0) {
+                if ((GET_POS_BB_MASK(forward_pos - 1) & king_bb_mask) != 0) {
+                    return false;
+                };
+            }
+            if (piece.x != 7) {
+                if ((GET_POS_BB_MASK(forward_pos + 1) & king_bb_mask) != 0) {
+                    return false;
+                }
+            }
+            continue;
+        }
+
+        GET_PSEUDO_LEGAL_MOVES_GENERIC(move_list, piece.type, context, i)
+        for (int j = 0; j < move_list.n_moves; j++) {
+            // Need to check special case of straight pawn movements, which are *not* attacks.
+            if ((piece.type != Pawn) || (piece.x != move_list.moves[j].to_x)) {
+                if ((GET_MOVE_BB_MASK(move_list.moves[j]) & king_bb_mask) != 0) {
+                    free(move_list.moves);
+                    return false;
+                }
+            }
+        }
+        // Free the move list for each piece
+        free(move_list.moves);
+    }
     return true;
 }
 
@@ -384,22 +373,18 @@ MoveList filter_legal_pseudo_moves(PlyContext *context, MoveList move_list) {
     return (MoveList){moves, n_moves};
 }
 
-uint64_t get_opponent_attack_bb(PlyContext context) {
-    // Flip the perspective of the PlyContext from white to black or vice versa
-    PlyContext opponent_context = create_context_branch(context, NULL_MOVE);
-    UPDATE_POINTERS(opponent_context)
-
+uint64_t get_our_attack_bb(PlyContext *context) {
     uint8_t forward_pos;
     uint64_t result = 0;
     MoveList move_list;
     Piece piece;
     for (int i = 0; i < 16; i++) {
-        piece = opponent_context.our_pieces[i];
+        piece = context->our_pieces[i];
 
         // We have to handle pawn attacks manually,
         // since they will not be detected if the space they are attacking is empty.
         if (piece.type == Pawn) {
-            forward_pos = GET_PIECE_POS(piece) + (opponent_context.is_white ? 8 : -8);
+            forward_pos = GET_PIECE_POS(piece) + (context->is_white ? 8 : -8);
             if (piece.x != 0) {
                 result |= GET_POS_BB_MASK(forward_pos - 1);
             }
@@ -409,7 +394,7 @@ uint64_t get_opponent_attack_bb(PlyContext context) {
             continue;
         }
 
-        GET_PSEUDO_LEGAL_MOVES_GENERIC(move_list, piece.type, &opponent_context, i)
+        GET_PSEUDO_LEGAL_MOVES_GENERIC(move_list, piece.type, context, i)
         for (int j = 0; j < move_list.n_moves; j++) {
             // Need to check special case of straight pawn movements, which are *not* attacks.
             if ((piece.type != Pawn) || (piece.x != move_list.moves[j].to_x)) {
@@ -422,8 +407,14 @@ uint64_t get_opponent_attack_bb(PlyContext context) {
     return result;
 }
 
-MoveList get_all_legal_moves(PlyContext context) {
-    UPDATE_POINTERS(context)
+uint64_t get_opponent_attack_bb(PlyContext *context) {
+    // Flip the perspective of the PlyContext from white to black or vice versa
+    PlyContext branch = create_context_branch(*(context), NULL_MOVE);
+    UPDATE_POINTERS(branch)
+    return get_our_attack_bb(&branch);
+}
+
+MoveList get_all_legal_moves(PlyContext *context) {
     uint8_t total_n_moves = 0;
     Move *total_moves;
     uint8_t n_move_lists = 0;
@@ -431,9 +422,9 @@ MoveList get_all_legal_moves(PlyContext context) {
 
     MoveList raw_piece_moves, piece_moves;
     for (int i = 0; i < 16; i++) {
-        GET_PSEUDO_LEGAL_MOVES_GENERIC(raw_piece_moves, context.our_pieces[i].type, &context, i)
+        GET_PSEUDO_LEGAL_MOVES_GENERIC(raw_piece_moves, context->our_pieces[i].type, context, i)
         // We will free this later, when collecting the legal moves from all pieces
-        piece_moves = filter_legal_pseudo_moves(&context, raw_piece_moves);
+        piece_moves = filter_legal_pseudo_moves(context, raw_piece_moves);
         // Free the unfiltered move list for each piece
         free(raw_piece_moves.moves);
 
@@ -442,9 +433,8 @@ MoveList get_all_legal_moves(PlyContext context) {
     }
 
     uint64_t opponent_attack_bb = get_opponent_attack_bb(context);
-    UPDATE_POINTERS(context)
     // We will free this later, when collecting the legal moves from all pieces
-    piece_moves = get_legal_moves_castling(&context, opponent_attack_bb);
+    piece_moves = get_legal_moves_castling(context, opponent_attack_bb);
     total_n_moves += piece_moves.n_moves;
     move_lists[n_move_lists++] = piece_moves;
 
@@ -464,7 +454,23 @@ MoveList get_all_legal_moves(PlyContext context) {
     return (MoveList){total_moves, total_n_moves};
 }
 
-uint64_t perft(PlyContext context, uint8_t depth) {
+bool has_legal_move(PlyContext *context) {
+    MoveList raw_piece_moves, piece_moves;
+    for (int i = 0; i < 16; i++) {
+        GET_PSEUDO_LEGAL_MOVES_GENERIC(raw_piece_moves, context->our_pieces[i].type, context, i)
+        piece_moves = filter_legal_pseudo_moves(context, raw_piece_moves);
+        free(raw_piece_moves.moves);
+        free(piece_moves.moves);
+        if (piece_moves.n_moves !=0 ) {
+            return true;
+        }
+    }
+    piece_moves = get_legal_moves_castling(context, get_opponent_attack_bb(context));
+    free(piece_moves.moves);
+    return (piece_moves.n_moves != 0);
+}
+
+uint64_t perft(PlyContext *context, uint8_t depth) {
     if (depth == 0) {
         return 1;
     }
@@ -473,9 +479,9 @@ uint64_t perft(PlyContext context, uint8_t depth) {
     PlyContext branch;
     uint64_t total = 0;
     for (int i = 0; i < legal_moves.n_moves; i++) {
-        branch = create_context_branch(context, legal_moves.moves[i]);
+        branch = create_context_branch(*context, legal_moves.moves[i]);
         UPDATE_POINTERS(branch)
-        total += perft(branch, depth - 1);
+        total += perft(&branch, depth - 1);
     }
     free(legal_moves.moves);
     return total;
