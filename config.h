@@ -22,7 +22,7 @@
 
 ///// Game Configuration /////
 #define DEFAULT_LOCK_DISPLAY false
-#define MOVE_SEARCH_DEPTH 4
+#define MOVE_SEARCH_DEPTH 6
 #define LOOKUP_TABLE_SIZE_BYTES (uint64_t)(512 * 1024 * 1024)
 
 #endif

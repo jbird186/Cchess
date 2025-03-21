@@ -105,152 +105,158 @@ void remove_black_queen_side_castling_rights(PlyContext *context) {
     context->black_can_castle_queen_side = false;
 }
 
-// Updates the context such that the given move is played
-void update_context(PlyContext *context, Move move) {
-    UPDATE_HASH(context->hash, get_prev_move_hash(context->prev_move))
-    UPDATE_HASH(context->hash, get_prev_move_hash(move))
-    context->prev_move = move;
+void flip_perspective(PlyContext *context) {
     UPDATE_HASH(context->hash, IS_WHITE_TURN_HASH)
     context->is_white = !context->is_white;
 
-    // The perspective is flipped so we don't have to update the pointers later
     context->our_pieces = context->opponent_pieces;
     context->opponent_pieces = context->is_white ? context->black_pieces : context->white_pieces;
 
     uint64_t tmp = context->our_bb;
     context->our_bb = context->opponent_bb;
     context->opponent_bb = tmp;
+}
+
+// Updates the context such that the given move is played
+void update_context(PlyContext *context, Move move) {
+    UPDATE_HASH(context->hash, get_prev_move_hash(context->prev_move))
+    UPDATE_HASH(context->hash, get_prev_move_hash(move))
+    context->prev_move = move;
 
     bool has_promoted = false;
     // Handle special moves
     switch (move.special_move) {
         case EnPassant: {
             uint8_t pawn_piece_id = 8 + move.to_x;
-            UPDATE_HASH(context->hash, get_piece_hash(context->our_pieces[pawn_piece_id], context->is_white));
-            context->our_bb ^= GET_PIECE_BB_MASK(context->our_pieces[pawn_piece_id]);
-            context->our_pieces[pawn_piece_id].type = NullPiece;
+            UPDATE_HASH(context->hash, get_piece_hash(context->opponent_pieces[pawn_piece_id], !context->is_white));
+            context->opponent_bb ^= GET_PIECE_BB_MASK(context->opponent_pieces[pawn_piece_id]);
+            context->opponent_pieces[pawn_piece_id].type = NullPiece;
             break;
         }
 
         case PromoteKnight:
-            context->opponent_pieces[move.piece_id].type = Knight;
+            context->our_pieces[move.piece_id].type = Knight;
             has_promoted = true;
             break;
         case PromoteBishop:
-            context->opponent_pieces[move.piece_id].type = Bishop;
+            context->our_pieces[move.piece_id].type = Bishop;
             has_promoted = true;
             break;
         case PromoteRook:
-            context->opponent_pieces[move.piece_id].type = Rook;
+            context->our_pieces[move.piece_id].type = Rook;
             has_promoted = true;
             break;
         case PromoteQueen:
-            context->opponent_pieces[move.piece_id].type = Queen;
+            context->our_pieces[move.piece_id].type = Queen;
             has_promoted = true;
             break;
 
         case KingSideCastle:
             // Remove castling rights. Recall that the perspective is flipped.
             if (context->is_white) {
-                context->black_can_castle_king_side = false;
-                UPDATE_HASH(context->hash, BLACK_CASTLE_KING_SIDE_HASH)
-            } else {
                 context->white_can_castle_king_side = false;
                 UPDATE_HASH(context->hash, WHITE_CASTLE_KING_SIDE_HASH)
+            } else {
+                context->black_can_castle_king_side = false;
+                UPDATE_HASH(context->hash, BLACK_CASTLE_KING_SIDE_HASH)
             }
             // Move the king
-            context->opponent_pieces[4].x = 6;
+            context->our_pieces[4].x = 6;
             // Move the rook
-            context->opponent_pieces[7].x = 5;
+            context->our_pieces[7].x = 5;
             // Update bitboards
-            context->opponent_bb ^= context->is_white ?
-                BLACK_KING_SIDE_CASTLING_BB_XOR : WHITE_KING_SIDE_CASTLING_BB_XOR;
+            context->our_bb ^= context->is_white ?
+                WHITE_KING_SIDE_CASTLING_BB_XOR : BLACK_KING_SIDE_CASTLING_BB_XOR;
             context->piece_bb = context->our_bb | context->opponent_bb;
             // We don't want to update any positions at the end
+            flip_perspective(context);
             return;
 
         case QueenSideCastle:
             // Remove castling rights. Recall that the perspective is flipped.
             if (context->is_white) {
-                context->black_can_castle_queen_side = false;
-                UPDATE_HASH(context->hash, BLACK_CASTLE_QUEEN_SIDE_HASH)
-            } else {
                 context->white_can_castle_queen_side = false;
                 UPDATE_HASH(context->hash, WHITE_CASTLE_QUEEN_SIDE_HASH)
+            } else {
+                context->black_can_castle_queen_side = false;
+                UPDATE_HASH(context->hash, BLACK_CASTLE_QUEEN_SIDE_HASH)
             }
             // Move the king
-            context->opponent_pieces[4].x = 2;
+            context->our_pieces[4].x = 2;
             // Move the rook
-            context->opponent_pieces[0].x = 3;
+            context->our_pieces[0].x = 3;
             // Update bitboards
-            context->opponent_bb ^= context->is_white ?
-                BLACK_QUEEN_SIDE_CASTLING_BB_XOR : WHITE_QUEEN_SIDE_CASTLING_BB_XOR;
+            context->our_bb ^= context->is_white ?
+                WHITE_QUEEN_SIDE_CASTLING_BB_XOR : WHITE_QUEEN_SIDE_CASTLING_BB_XOR;
             context->piece_bb = context->our_bb | context->opponent_bb;
             // We don't want to update any positions at the end
+            flip_perspective(context);
             return;
         case NullMove:
+            flip_perspective(context);
             return;
     }
 
     // Check if the King has moved, to remove castling rights
     if (move.piece_id == 4) {
         if (context->is_white) {
-            remove_black_king_side_castling_rights(context);
-            remove_black_queen_side_castling_rights(context);
-        } else {
             remove_white_king_side_castling_rights(context);
             remove_white_queen_side_castling_rights(context);
+        } else {
+            remove_black_king_side_castling_rights(context);
+            remove_black_queen_side_castling_rights(context);
         }
     } else if (move.piece_id == 7) {
         if (context->is_white) {
-            remove_black_king_side_castling_rights(context);
-        } else {
             remove_white_king_side_castling_rights(context);
+        } else {
+            remove_black_king_side_castling_rights(context);
         }
     } else if (move.piece_id == 0) {
         if (context->is_white) {
-            remove_black_queen_side_castling_rights(context);
-        } else {
             remove_white_queen_side_castling_rights(context);
+        } else {
+            remove_black_queen_side_castling_rights(context);
         }
     }
-    context->opponent_bb ^= GET_PIECE_BB_MASK(context->opponent_pieces[move.piece_id]);
+    context->our_bb ^= GET_PIECE_BB_MASK(context->our_pieces[move.piece_id]);
 
     // Update this piece's position
     Piece to_remove_from_hash;
     if (has_promoted) {
         to_remove_from_hash = (Piece){
             .type = Pawn,
-            .x = context->opponent_pieces[move.piece_id].x,
-            .y = context->opponent_pieces[move.piece_id].y
+            .x = context->our_pieces[move.piece_id].x,
+            .y = context->our_pieces[move.piece_id].y
         };
     } else {
-        to_remove_from_hash = context->opponent_pieces[move.piece_id];
+        to_remove_from_hash = context->our_pieces[move.piece_id];
     }
-    UPDATE_HASH(context->hash, get_piece_hash(to_remove_from_hash, !context->is_white))
-    context->opponent_pieces[move.piece_id].x = move.to_x;
-    context->opponent_pieces[move.piece_id].y = move.to_y;
-    UPDATE_HASH(context->hash, get_piece_hash(context->opponent_pieces[move.piece_id], !context->is_white))
-    uint64_t piece_mask = GET_PIECE_BB_MASK(context->opponent_pieces[move.piece_id]);
-    context->opponent_bb |= piece_mask;
+    UPDATE_HASH(context->hash, get_piece_hash(to_remove_from_hash, context->is_white))
+    context->our_pieces[move.piece_id].x = move.to_x;
+    context->our_pieces[move.piece_id].y = move.to_y;
+    UPDATE_HASH(context->hash, get_piece_hash(context->our_pieces[move.piece_id], context->is_white))
+    uint64_t piece_mask = GET_PIECE_BB_MASK(context->our_pieces[move.piece_id]);
+    context->our_bb |= piece_mask;
 
     // Remove an opponent piece, if necessary
-    if ((piece_mask & context->our_bb) != 0) {
+    if ((piece_mask & context->opponent_bb) != 0) {
         for (int i = 0; i < 16; i++) {
             // If already removed, skip
-            if (context->our_pieces[i].type == NullPiece)
+            if (context->opponent_pieces[i].type == NullPiece)
                 continue;
 
             // Search for the piece with matching coordinates
-            if ((context->our_pieces[i].x == move.to_x) && (context->our_pieces[i].y == move.to_y)) {
-                UPDATE_HASH(context->hash, get_piece_hash(context->our_pieces[i], context->is_white));
-                context->our_pieces[i].type = NullPiece;
-                context->our_bb ^= piece_mask;
+            if ((context->opponent_pieces[i].x == move.to_x) && (context->opponent_pieces[i].y == move.to_y)) {
+                UPDATE_HASH(context->hash, get_piece_hash(context->opponent_pieces[i], !context->is_white));
+                context->opponent_pieces[i].type = NullPiece;
+                context->opponent_bb ^= piece_mask;
                 break;
             }
         }
     }
     context->piece_bb = context->our_bb | context->opponent_bb;
+    flip_perspective(context);
 }
 
 void copy_context(PlyContext *from, PlyContext *to) {
