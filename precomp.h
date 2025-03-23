@@ -21,7 +21,7 @@ extern uint8_t BISHOP_POSSIBLE_N_MOVES_TABLE[64];
 extern uint8_t ROOK_POSSIBLE_N_MOVES_TABLE[64];
 extern uint8_t QUEEN_POSSIBLE_N_MOVES_TABLE[64];
 
-void init_precomp();
+void init_precomp(void);
 
 uint64_t get_piece_possible_attack_bb(Piece piece, bool is_white);
 

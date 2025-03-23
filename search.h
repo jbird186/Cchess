@@ -22,7 +22,7 @@ typedef struct {
     BestMoveCacheEntry *entries;
 } BestMoveCache;
 
-BestMoveCache new_move_cache();
+BestMoveCache new_move_cache(void);
 
 // Minimax search with alpha-beta pruning
 BestMove get_best_move_ab(PlyContext *context, BestMoveCache *cache, int32_t depth);

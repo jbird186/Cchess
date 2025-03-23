@@ -24,6 +24,6 @@ ContextHash get_piece_hash(Piece piece, bool is_white);
 ContextHash get_prev_move_hash(Move prev_move);
 ContextHash get_context_hash(PlyContext *context);
 
-void init_hashing();
+void init_hashing(void);
 
 #endif

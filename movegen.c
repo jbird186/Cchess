@@ -441,7 +441,7 @@ MoveList get_all_legal_moves(PlyContext *context) {
     uint8_t total_n_moves = 0;
     Move *total_moves;
     uint8_t n_move_lists = 0;
-    MoveList *move_lists = malloc(sizeof(MoveList) * 17);
+    MoveList move_lists[17];
 
     MoveList raw_piece_moves, piece_moves;
     for (int i = 0; i < 16; i++) {
@@ -471,8 +471,6 @@ MoveList get_all_legal_moves(PlyContext *context) {
         // Free the filtered move list for each piece
         free(move_lists[i].moves);
     }
-    // Free the list of move lists
-    free(move_lists);
 
     return (MoveList){total_moves, total_n_moves};
 }

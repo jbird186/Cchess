@@ -15,7 +15,7 @@ uint64_t get_table_index(ContextHash hash) {
     return (hash.alpha % MOVE_CACHE_SIZE);
 }
 
-BestMoveCache new_move_cache() {
+BestMoveCache new_move_cache(void) {
     BestMoveCacheEntry *entries = malloc(sizeof(BestMoveCacheEntry) * MOVE_CACHE_SIZE);
     return (BestMoveCache){entries};
 }

@@ -5,7 +5,7 @@
 
 const ContextHash NULL_HASH = {.alpha = 0, .beta = 0};
 
-ContextHash rand_hash() {
+ContextHash rand_hash(void) {
     return (ContextHash){
         .alpha = (int64_t)rand() + ((int64_t)rand() << 32),
         .beta = (int64_t)rand() + ((int64_t)rand() << 32)
@@ -64,7 +64,7 @@ ContextHash get_context_hash(PlyContext *context) {
     return hash;
 }
 
-void init_hashing() {
+void init_hashing(void) {
     srand(time(NULL));
     for (int i = 0; i < 8; i++) {
         PAWN_FIRST_MOVE_TABLE[i] = rand_hash();

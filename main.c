@@ -12,12 +12,12 @@
 #include "precomp.h"
 #include "hash.h"
 
-void init() {
+void init(void) {
     init_precomp();
     init_hashing();
 }
 
-void clear_input_buffer() {
+void clear_input_buffer(void) {
     char c;
     while ((c = getchar()) != '\n' && c != EOF);
 }

@@ -46,7 +46,7 @@ uint8_t QUEEN_POSSIBLE_N_MOVES_TABLE[64];
 #define INIT_PIECE_TABLE(piece_type, pseudo_legal_move_gen, attack_table_name, move_n_table_name) \
     INIT_PAWN_TABLE(piece_type, pseudo_legal_move_gen, attack_table_name, move_n_table_name, 0, 7, true)
 
-void init_precomp() {
+void init_precomp(void) {
     INIT_PAWN_TABLE(Pawn, get_pseudo_legal_moves_pawn,
         WHITE_PAWN_POSSIBLE_ATTACK_BB_TABLE, WHITE_PAWN_POSSIBLE_N_MOVES_TABLE, 0, 6, true)
     INIT_PAWN_TABLE(Pawn, get_pseudo_legal_moves_pawn,
