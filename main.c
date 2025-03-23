@@ -40,10 +40,10 @@ int main(int argc, char **argv) {
     char (*legal_move_codes)[6] = malloc(sizeof(char) * 6 * 1024);
 
     bool auto_play_white = false, auto_play_black = false;
-    bool display_as_white, lock_display = DEFAULT_LOCK_DISPLAY;
+    bool lock_display = DEFAULT_LOCK_DISPLAY;
     for (;;) {
         char input[256] = "";
-        display_as_white = lock_display ? display_as_white : context.is_white;
+        bool display_as_white = lock_display ? display_as_white : context.is_white;
         print_board(&context, display_as_white);
         // printf("HASH: %lu %lu\n", context.hash.alpha, context.hash.beta);
 
@@ -106,6 +106,14 @@ int main(int argc, char **argv) {
             }
         }
 
+        // Reset the board
+        if (strcmp(input, "reset") == 0) {
+            new_context(&context);
+            hist_len = 0;
+            printf("\n");
+            continue;
+        }
+
         // Exit the program
         if (strcmp(input, "exit") == 0) {
             break;
@@ -154,7 +162,7 @@ int main(int argc, char **argv) {
         }
 
         // Display history
-        if (strcmp(input, "hist") == 0) {
+        if (strcmp(input, "history") == 0) {
             if (hist_len == 0) {
                 printf("No history to display.\n\n");
                 continue;
