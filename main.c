@@ -22,6 +22,17 @@ void clear_input_buffer() {
     while ((c = getchar()) != '\n' && c != EOF);
 }
 
+void show_history(char (*move_hist)[6], uint32_t hist_len) {
+    printf("Game history:");
+    if (hist_len == 0) {
+        printf(" None");
+    }
+    for (int i = 0; i < hist_len; i++) {
+        printf(" %s", move_hist[i]);
+    }
+    printf("\n\n");
+}
+
 // TODO: Draws
 int main(int argc, char **argv) {
     init();
@@ -31,13 +42,13 @@ int main(int argc, char **argv) {
     new_context(&context);
     BestMoveCache cache = new_lookup_table();
 
-    char (*move_hist)[6] = malloc(sizeof(char) * 6 * 1024);
-    PlyContext *context_hist = malloc(sizeof(PlyContext) * 1024);
+    char (*move_hist)[6] = malloc(sizeof(char) * 6 * MAX_GAME_PLY);
+    PlyContext *context_hist = malloc(sizeof(PlyContext) * MAX_GAME_PLY);
     uint32_t hist_len = 0;
 
     MoveList legal_moves;
     legal_moves.moves = NULL;
-    char (*legal_move_codes)[6] = malloc(sizeof(char) * 6 * 1024);
+    char (*legal_move_codes)[6] = malloc(sizeof(char) * 6 * MAX_GAME_PLY);
 
     bool auto_play_white = false, auto_play_black = false;
     bool lock_display = DEFAULT_LOCK_DISPLAY;
@@ -108,9 +119,9 @@ int main(int argc, char **argv) {
 
         // Reset the board
         if (strcmp(input, "reset") == 0) {
+            show_history(move_hist, hist_len);
             new_context(&context);
             hist_len = 0;
-            printf("\n");
             continue;
         }
 
@@ -163,14 +174,7 @@ int main(int argc, char **argv) {
 
         // Display history
         if (strcmp(input, "history") == 0) {
-            if (hist_len == 0) {
-                printf("No history to display.\n\n");
-                continue;
-            }
-            for (int i = 0; i < hist_len; i++) {
-                printf("%s ", move_hist[i]);
-            }
-            printf("\n\n");
+            show_history(move_hist, hist_len);
             continue;
         }
 
@@ -283,11 +287,7 @@ int main(int argc, char **argv) {
             printf("Please enter a valid move or command.\n\n");
         }
     }
-    printf("Game history:");
-    for (int i = 0; i < hist_len; i++) {
-        printf(" %s", move_hist[i]);
-    }
-    printf("\n\n");
+    show_history(move_hist, hist_len);
 
     free(cache.entries);
     free(context_hist);

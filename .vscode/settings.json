@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "movegen.h": "c",
+        "types.h": "c"
+    }
+}
