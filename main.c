@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
     int arg_i = 1;
     PlyContext context;
     new_context(&context);
-    BestMoveCache cache = new_lookup_table();
+    BestMoveCache cache = new_move_cache();
 
     char (*move_hist)[6] = malloc(sizeof(char) * 6 * MAX_GAME_PLY);
     PlyContext *context_hist = malloc(sizeof(PlyContext) * MAX_GAME_PLY);

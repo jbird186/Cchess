@@ -10,14 +10,14 @@
 
 #include <stdio.h>
 
-const uint64_t LOOKUP_TABLE_SIZE = LOOKUP_TABLE_SIZE_BYTES / sizeof(BestMoveCacheEntry);
+const uint64_t MOVE_CACHE_SIZE = MOVE_CACHE_SIZE_BYTES / sizeof(BestMoveCacheEntry);
 
 uint64_t get_table_index(ContextHash hash) {
-    return (hash.alpha % LOOKUP_TABLE_SIZE);
+    return (hash.alpha % MOVE_CACHE_SIZE);
 }
 
-BestMoveCache new_lookup_table() {
-    BestMoveCacheEntry *entries = malloc(sizeof(BestMoveCacheEntry) * LOOKUP_TABLE_SIZE);
+BestMoveCache new_move_cache() {
+    BestMoveCacheEntry *entries = malloc(sizeof(BestMoveCacheEntry) * MOVE_CACHE_SIZE);
     return (BestMoveCache){entries};
 }
 
