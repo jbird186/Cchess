@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "search.h"
 #include "movegen.h"
@@ -7,8 +8,6 @@
 #include "eval.h"
 #include "config.h"
 #include "hash.h"
-
-#include <stdio.h>
 
 const uint64_t MOVE_CACHE_SIZE = MOVE_CACHE_SIZE_BYTES / sizeof(BestMoveCacheEntry);
 

@@ -1,9 +1,9 @@
 #ifndef PRECOMP_H
 #define PRECOMP_H
 
-#include "types.h"
-
 #include <stdint.h>
+
+#include "types.h"
 
 extern uint64_t WHITE_PAWN_POSSIBLE_ATTACK_BB_TABLE[64];
 extern uint64_t BLACK_PAWN_POSSIBLE_ATTACK_BB_TABLE[64];

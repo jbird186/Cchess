@@ -268,39 +268,29 @@ MoveList get_pseudo_legal_moves_king(PlyContext *context, uint8_t piece_id) {
     return (MoveList){moves, n_moves};
 }
 
-// Adds all legal castling moves for the given color and opponent attack bitboard.
-MoveList get_legal_moves_castling(PlyContext *context, uint64_t opponent_attack_bb) {
-    uint8_t n_moves = 0;
-    Move *moves = malloc(sizeof(Move) * CASTLING_MAX_MOVES);
-
-    uint64_t queen_side_castling_pieces_mask = context->is_white ?
-        WHITE_QUEEN_SIDE_CASTLING_PIECES_MASK : BLACK_QUEEN_SIDE_CASTLING_PIECES_MASK;
-    uint64_t king_side_castling_pieces_mask = context->is_white ?
-        WHITE_KING_SIDE_CASTLING_PIECES_MASK : BLACK_KING_SIDE_CASTLING_PIECES_MASK;
-    uint64_t queen_side_castling_attack_mask = context->is_white ?
-        WHITE_QUEEN_SIDE_CASTLING_ATTACK_MASK : BLACK_QUEEN_SIDE_CASTLING_ATTACK_MASK;
-    uint64_t king_side_castling_attack_mask = context->is_white ?
-        WHITE_KING_SIDE_CASTLING_ATTACK_MASK : BLACK_KING_SIDE_CASTLING_ATTACK_MASK;
-    uint8_t back_rank_index = context->is_white ? 0 : 7;
-
-    // Queen side castling
-    if ((context->is_white ? context->white_can_castle_queen_side : context->black_can_castle_queen_side)
-        && ((context->piece_bb & queen_side_castling_pieces_mask) == 0)
-        && ((opponent_attack_bb & queen_side_castling_attack_mask) == 0)
-    ) {
-        moves[n_moves++] = (Move){4, 2, back_rank_index, QueenSideCastle};
+#define GET_PSEUDO_LEGAL_MOVES_GENERIC(move_list, type, context, i) \
+    switch (type) { \
+        case King: \
+            (move_list) = get_pseudo_legal_moves_king(context, i); \
+            break; \
+        case Pawn: \
+            (move_list) = get_pseudo_legal_moves_pawn(context, i); \
+            break; \
+        case Knight: \
+            (move_list) = get_pseudo_legal_moves_knight(context, i); \
+            break; \
+        case Bishop: \
+            (move_list) = get_pseudo_legal_moves_bishop(context, i); \
+            break; \
+        case Rook: \
+            (move_list) = get_pseudo_legal_moves_rook(context, i); \
+            break; \
+        case Queen: \
+            (move_list) = get_pseudo_legal_moves_queen(context, i); \
+            break; \
+        default: \
+            continue; \
     }
-
-    // King side castling
-    if ((context->is_white ? context->white_can_castle_king_side : context->black_can_castle_king_side)
-        && ((context->piece_bb & king_side_castling_pieces_mask) == 0)
-        && ((opponent_attack_bb & king_side_castling_attack_mask) == 0)
-    ) {
-        moves[n_moves++] = (Move){4, 6, back_rank_index, KingSideCastle};
-    }
-
-    return (MoveList){moves, n_moves};
-}
 
 // Checks whether a game state is legal.
 // This is used to separate the actually-legal moves from the pseudo-legal-but-not-actually-legal moves.
@@ -411,6 +401,40 @@ uint64_t get_opponent_attack_bb(PlyContext *context) {
     PlyContext branch;
     new_context_branch(context, &branch, NULL_MOVE);
     return get_our_attack_bb(&branch);
+}
+
+// Adds all legal castling moves for the given color and opponent attack bitboard.
+MoveList get_legal_moves_castling(PlyContext *context, uint64_t opponent_attack_bb) {
+    uint8_t n_moves = 0;
+    Move *moves = malloc(sizeof(Move) * CASTLING_MAX_MOVES);
+
+    uint64_t queen_side_castling_pieces_mask = context->is_white ?
+        WHITE_QUEEN_SIDE_CASTLING_PIECES_MASK : BLACK_QUEEN_SIDE_CASTLING_PIECES_MASK;
+    uint64_t king_side_castling_pieces_mask = context->is_white ?
+        WHITE_KING_SIDE_CASTLING_PIECES_MASK : BLACK_KING_SIDE_CASTLING_PIECES_MASK;
+    uint64_t queen_side_castling_attack_mask = context->is_white ?
+        WHITE_QUEEN_SIDE_CASTLING_ATTACK_MASK : BLACK_QUEEN_SIDE_CASTLING_ATTACK_MASK;
+    uint64_t king_side_castling_attack_mask = context->is_white ?
+        WHITE_KING_SIDE_CASTLING_ATTACK_MASK : BLACK_KING_SIDE_CASTLING_ATTACK_MASK;
+    uint8_t back_rank_index = context->is_white ? 0 : 7;
+
+    // Queen side castling
+    if ((context->is_white ? context->white_can_castle_queen_side : context->black_can_castle_queen_side)
+        && ((context->piece_bb & queen_side_castling_pieces_mask) == 0)
+        && ((opponent_attack_bb & queen_side_castling_attack_mask) == 0)
+    ) {
+        moves[n_moves++] = (Move){4, 2, back_rank_index, QueenSideCastle};
+    }
+
+    // King side castling
+    if ((context->is_white ? context->white_can_castle_king_side : context->black_can_castle_king_side)
+        && ((context->piece_bb & king_side_castling_pieces_mask) == 0)
+        && ((opponent_attack_bb & king_side_castling_attack_mask) == 0)
+    ) {
+        moves[n_moves++] = (Move){4, 6, back_rank_index, KingSideCastle};
+    }
+
+    return (MoveList){moves, n_moves};
 }
 
 MoveList get_all_legal_moves(PlyContext *context) {

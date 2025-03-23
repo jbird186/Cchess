@@ -1,9 +1,9 @@
+#include <stdio.h>
+#include <stdlib.h>
+
 #include "precomp.h"
 #include "movegen.h"
 #include "context.h"
-
-#include <stdio.h>
-#include <stdlib.h>
 
 uint64_t WHITE_PAWN_POSSIBLE_ATTACK_BB_TABLE[64];
 uint64_t BLACK_PAWN_POSSIBLE_ATTACK_BB_TABLE[64];
