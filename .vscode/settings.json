@@ -1,9 +1,0 @@
-{
-    "files.associations": {
-        "string_view": "c",
-        "types.h": "c",
-        "context.h": "c",
-        "hash.h": "c",
-        "constants.h": "c"
-    }
-}
