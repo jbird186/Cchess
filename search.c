@@ -1,5 +1,4 @@
 #include <stdlib.h>
-#include <stdio.h>
 
 #include "search.h"
 #include "movegen.h"
@@ -8,6 +7,7 @@
 #include "eval.h"
 #include "config.h"
 #include "hash.h"
+#include "history.h"
 
 const uint64_t MOVE_CACHE_SIZE = MOVE_CACHE_SIZE_BYTES / sizeof(BestMoveCacheEntry);
 
@@ -16,7 +16,7 @@ uint64_t get_table_index(ContextHash hash) {
 }
 
 BestMoveCache new_move_cache(void) {
-    BestMoveCacheEntry *entries = malloc(sizeof(BestMoveCacheEntry) * MOVE_CACHE_SIZE);
+    BestMoveCacheEntry *entries = calloc(MOVE_CACHE_SIZE, sizeof(BestMoveCacheEntry));
     return (BestMoveCache){entries};
 }
 
@@ -31,7 +31,7 @@ BestMoveCache new_move_cache(void) {
     }
 
 // Minimax search with alpha-beta pruning
-BestMove _get_best_move_ab(PlyContext *context, BestMoveCache *cache, int32_t depth, int32_t floor, int32_t ceiling) {
+BestMove _get_best_move_ab(StateRepetitions *repetitions, PlyContext *context, int32_t depth, BestMoveCache *cache, int32_t floor, int32_t ceiling) {
     // Check if the cache contains this state
     BestMoveCacheEntry cached = cache->entries[get_table_index(context->hash)];
     // TODO: Allow non-leaf results to be returned
@@ -57,10 +57,18 @@ BestMove _get_best_move_ab(PlyContext *context, BestMoveCache *cache, int32_t de
     int32_t score = LOSS_VALUE * 2;
     PlyContext branch;
     for (int i = 0; i < legal_moves.n_moves; i++) {
+        StateRepetitions reps_branch;
         new_context_branch(context, &branch, legal_moves.moves[i]);
+        _state_repetition_branch(repetitions, &reps_branch, branch.hash);
 
-        BestMove opponent_best = _get_best_move_ab(&branch, cache, depth - 1, -ceiling, -floor);
-        int32_t branch_score = -opponent_best.score;
+        int32_t branch_score;
+        if (is_draw(&reps_branch, branch.hash)) {
+            branch_score = DRAW_VALUE;
+        } else {
+            BestMove opponent_best = _get_best_move_ab(&reps_branch, &branch, depth - 1, cache, -ceiling, -floor);
+            branch_score = -opponent_best.score;
+        }
+        free_state_repetitions(&reps_branch);
 
         if (branch_score > score) {
             score = branch_score;
@@ -82,6 +90,9 @@ BestMove _get_best_move_ab(PlyContext *context, BestMoveCache *cache, int32_t de
     return best_move;
 }
 
-BestMove get_best_move_ab(PlyContext *context, BestMoveCache *cache, int32_t depth) {
-    return _get_best_move_ab(context, cache, depth, 1000000000, -1000000000);
+BestMove get_best_move_ab(StateRepetitions *repetitions, PlyContext *context, int32_t depth) {
+    BestMoveCache cache = new_move_cache();
+    BestMove result = _get_best_move_ab(repetitions, context, depth, &cache, 1000000000, -1000000000);
+    free(cache.entries);
+    return result;
 }

@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+static const int32_t N_REPETITIONS_DRAW = 3;
+
 ///// Maximum Moves /////
 // These are the maximum possible moves that each piece can make in one ply.
 // These values are used for allocating memory for MoveLists.

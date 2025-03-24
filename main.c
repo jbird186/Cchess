@@ -11,6 +11,7 @@
 #include "config.h"
 #include "precomp.h"
 #include "hash.h"
+#include "history.h"
 
 void init(void) {
     init_precomp();
@@ -22,32 +23,17 @@ void clear_input_buffer(void) {
     while ((c = getchar()) != '\n' && c != EOF);
 }
 
-void show_history(char (*move_hist)[6], uint32_t hist_len) {
-    printf("Game history:");
-    if (hist_len == 0) {
-        printf(" None");
-    }
-    for (int i = 0; i < hist_len; i++) {
-        printf(" %s", move_hist[i]);
-    }
-    printf("\n\n");
-}
-
-// TODO: Draws
 int main(int argc, char **argv) {
     init();
 
     int arg_i = 1;
+
     PlyContext context;
     new_context(&context);
-    BestMoveCache cache = new_move_cache();
+    GameHistory history;
+    new_history(&history);
 
-    char (*move_hist)[6] = malloc(sizeof(char) * 6 * MAX_GAME_PLY);
-    PlyContext *context_hist = malloc(sizeof(PlyContext) * MAX_GAME_PLY);
-    uint32_t hist_len = 0;
-
-    MoveList legal_moves;
-    legal_moves.moves = NULL;
+    MoveList legal_moves = { .moves = NULL, .n_moves = 0 };
     char (*legal_move_codes)[6] = malloc(sizeof(char) * 6 * MAX_GAME_PLY);
 
     bool auto_play_white = false, auto_play_black = false;
@@ -56,10 +42,12 @@ int main(int argc, char **argv) {
         char input[256] = "";
         bool display_as_white = lock_display ? display_as_white : context.is_white;
         print_board(&context, display_as_white);
+        printf("Evaluation (+ white): %d\n", evaluate(&context) * (context.is_white ? 1 : -1));
         // printf("HASH: %lu %lu\n", context.hash.alpha, context.hash.beta);
+        // printf("Repetitions: %u\n", state_repetitions(&history, context.hash));
 
         free(legal_moves.moves);
-        MoveList legal_moves = get_all_legal_moves(&context);
+        legal_moves = get_all_legal_moves(&context);
         for (int i = 0; i < legal_moves.n_moves; i++) {
             Piece piece = context.our_pieces[legal_moves.moves[i].piece_id];
 
@@ -99,6 +87,11 @@ int main(int argc, char **argv) {
             break;
         }
 
+        if (is_draw(&history.repetitions, context.hash)) {
+            printf("Draw by repetition.\n");
+            break;
+        }
+
         bool should_auto_play = context.is_white ? auto_play_white : auto_play_black;
 
         // Set the input variable for this loop iteration, if applicable
@@ -119,9 +112,9 @@ int main(int argc, char **argv) {
 
         // Reset the board
         if (strcmp(input, "reset") == 0) {
-            show_history(move_hist, hist_len);
+            print_history(&history);
+            clear_history(&history);
             new_context(&context);
-            hist_len = 0;
             continue;
         }
 
@@ -143,16 +136,16 @@ int main(int argc, char **argv) {
                 continue;
             }
 
-            if (depth > hist_len) {
-                printf("Depth (%u ply) exceeds history depth (%u ply).\n\n", depth, hist_len);
+            if (depth > history.length) {
+                printf("Depth (%u ply) exceeds history depth (%u ply).\n\n", depth, history.length);
                 continue;
             }
 
-            hist_len -= depth;
-            copy_context(&context_hist[hist_len], &context);
             printf("%u move%s sucessfully undone:", depth, depth == 1 ? "" : "s");
-            for (int i = hist_len + depth; i > hist_len; i--) {
-                printf(" %s", move_hist[i - 1]);
+            char move_str[6];
+            for (int i = 0; i < depth; i++) {
+                pop_history(&history, &context, move_str);
+                printf(" %s", move_str);
             }
             printf("\n\n");
             continue;
@@ -174,7 +167,7 @@ int main(int argc, char **argv) {
 
         // Display history
         if (strcmp(input, "history") == 0) {
-            show_history(move_hist, hist_len);
+            print_history(&history);
             continue;
         }
 
@@ -231,40 +224,39 @@ int main(int argc, char **argv) {
         if ((strcmp(input, "play") == 0) || should_auto_play) {
             printf("Computer is thinking...");
             fflush(stdout);
-            BestMove best_move = get_best_move_ab(&context, &cache, MOVE_SEARCH_DEPTH);
+            BestMove best_move = get_best_move_ab(&history.repetitions, &context, MOVE_SEARCH_DEPTH);
 
             Piece piece = context.our_pieces[best_move.move.piece_id];
 
-            move_hist[hist_len][0] = piece.x + 'a';
-            move_hist[hist_len][1] = piece.y + '1';
-            move_hist[hist_len][2] = best_move.move.to_x + 'a';
-            move_hist[hist_len][3] = best_move.move.to_y + '1';
+            char move_str[6];
+            move_str[0] = piece.x + 'a';
+            move_str[1] = piece.y + '1';
+            move_str[2] = best_move.move.to_x + 'a';
+            move_str[3] = best_move.move.to_y + '1';
             switch (best_move.move.special_move) {
                 case PromoteKnight:
-                    move_hist[hist_len][4] = 'n';
-                    move_hist[hist_len][5] = '\0';
+                    move_str[4] = 'n';
+                    move_str[5] = '\0';
                     break;
                 case PromoteBishop:
-                    move_hist[hist_len][4] = 'b';
-                    move_hist[hist_len][5] = '\0';
+                    move_str[4] = 'b';
+                    move_str[5] = '\0';
                     break;
                 case PromoteRook:
-                    move_hist[hist_len][4] = 'r';
-                    move_hist[hist_len][5] = '\0';
+                    move_str[4] = 'r';
+                    move_str[5] = '\0';
                     break;
                 case PromoteQueen:
-                    move_hist[hist_len][4] = 'q';
-                    move_hist[hist_len][5] = '\0';
+                    move_str[4] = 'q';
+                    move_str[5] = '\0';
                     break;
                 default:
-                    move_hist[hist_len][4] = '\0';
+                    move_str[4] = '\0';
                     break;
             }
 
-            context_hist[hist_len] = context;
-            printf(" %s\n\n", move_hist[hist_len]);
-            hist_len++;
-
+            append_history(&history, &context, move_str);
+            printf(" %s\n\n", move_str);
             update_context(&context, best_move.move);
             continue;
         }
@@ -274,10 +266,7 @@ int main(int argc, char **argv) {
         for (int i = 0; i < legal_moves.n_moves; i++) {
             if (strcmp(legal_move_codes[i], input) == 0) {
                 found_move = true;
-
-                context_hist[hist_len] = context;
-                strcpy(move_hist[hist_len++], input);
-
+                append_history(&history, &context, input);
                 update_context(&context, legal_moves.moves[i]);
                 printf("\n");
                 break;
@@ -287,11 +276,8 @@ int main(int argc, char **argv) {
             printf("Please enter a valid move or command.\n\n");
         }
     }
-    show_history(move_hist, hist_len);
-
-    free(cache.entries);
-    free(context_hist);
-    free(move_hist);
+    print_history(&history);
+    free_history(&history);
     free(legal_moves.moves);
     free(legal_move_codes);
     return 0;

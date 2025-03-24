@@ -57,3 +57,14 @@ void print_board(PlyContext *context, bool display_as_white) {
     }
     printf("%s to play.\n", context->is_white ? "White" : "Black");
 }
+
+void print_history(GameHistory *history) {
+    printf("Game history:");
+    if (history->length == 0) {
+        printf(" None");
+    }
+    for (int i = 0; i < history->length; i++) {
+        printf(" %s", history->moves[i]);
+    }
+    printf("\n\n");
+}

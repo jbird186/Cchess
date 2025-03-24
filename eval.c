@@ -4,6 +4,7 @@
 #include "config.h"
 #include "movegen.h"
 #include "precomp.h"
+#include "history.h"
 
 int32_t get_piece_base_value(Piece piece) {
     switch (piece.type) {

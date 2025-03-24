@@ -13,7 +13,7 @@
 ///// Game End Values /////
 #define WIN_VALUE 1000000000
 #define LOSS_VALUE -1000000000
-#define DRAW_VALUE 0
+#define DRAW_VALUE -100
 
 ///// Other Evaluation Values /////
 // #define N_LEGAL_MOVES_BONUS(n_moves) ((n_moves) + 63 - (64 / (n_moves)))
@@ -22,8 +22,8 @@
 
 ///// Game Configuration /////
 #define DEFAULT_LOCK_DISPLAY false
-#define MOVE_SEARCH_DEPTH 6
-#define MOVE_CACHE_SIZE_BYTES (uint64_t)(512 * 1024 * 1024)
+#define MOVE_SEARCH_DEPTH 5
+#define MOVE_CACHE_SIZE_BYTES (uint64_t)(256 * 1024 * 1024)
 #define MAX_GAME_PLY 1024
 
 #endif

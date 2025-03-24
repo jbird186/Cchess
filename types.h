@@ -14,8 +14,6 @@ typedef enum {
     Queen = 6,
 } PieceType;
 
-char get_piece_type_char(PieceType type, bool is_white);
-
 typedef struct {
     uint8_t type;
     uint8_t x;
@@ -52,17 +50,17 @@ typedef struct {
     uint8_t special_move;
 } Move;
 
+typedef struct {
+    Move *moves;
+    uint8_t n_moves;
+} MoveList;
+
 static const Move NULL_MOVE = (Move){NullPiece, 0, 0, NullMove};
 
 typedef struct {
     int32_t score;
     Move move;
 } BestMove;
-
-typedef struct {
-    Move *moves;
-    uint8_t n_moves;
-} MoveList;
 
 typedef struct {
     int64_t alpha;
@@ -97,5 +95,18 @@ typedef struct {
 
     ContextHash hash;
 } PlyContext;
+
+typedef struct {
+    ContextHash *hashes;
+    uint8_t *entries;
+    uint32_t n_entries;
+} StateRepetitions;
+
+typedef struct {
+    PlyContext *contexts;
+    char (*moves)[6];
+    uint32_t length;
+    StateRepetitions repetitions;
+} GameHistory;
 
 #endif
