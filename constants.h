@@ -18,7 +18,7 @@ static const int32_t KING_MAX_MOVES = 8;
 static const int32_t CASTLING_MAX_MOVES = 2;
 
 ///// Bitboards /////
-// Note that these are mirrored across the x-axis due to the way that bitboard masks are calculated.
+// Note that these are mirrored due to the way that bitboard masks are calculated.
 
 // The marked squares must be *empty* for castling to be legal.
 static const uint64_t WHITE_QUEEN_SIDE_CASTLING_PIECES_MASK =  0b00001110;

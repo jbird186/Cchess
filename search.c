@@ -62,7 +62,7 @@ BestMove _get_best_move_ab(StateRepetitions *repetitions, PlyContext *context, i
         _state_repetition_branch(repetitions, &reps_branch, branch.hash);
 
         int32_t branch_score;
-        if (is_draw(&reps_branch, branch.hash)) {
+        if (is_repetition_draw(&reps_branch, branch.hash)) {
             branch_score = DRAW_VALUE;
         } else {
             BestMove opponent_best = _get_best_move_ab(&reps_branch, &branch, depth - 1, cache, -ceiling, -floor);

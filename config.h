@@ -21,8 +21,9 @@
 #define PAWN_Y_VALUE_BONUS 30
 
 ///// Game Configuration /////
-#define DEFAULT_LOCK_DISPLAY false
-#define MOVE_SEARCH_DEPTH 5
+#define DEFAULT_LOCK_DISPLAY true
+#define SHOW_EVALUATION false
+#define MOVE_SEARCH_DEPTH 6
 #define MOVE_CACHE_SIZE_BYTES (uint64_t)(256 * 1024 * 1024)
 #define MAX_GAME_PLY 1024
 

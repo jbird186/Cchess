@@ -62,11 +62,11 @@ uint8_t n_state_repetitions(StateRepetitions *repetitions, ContextHash hash) {
 }
 
 // TOOD: More robust draw detection
-bool is_draw(StateRepetitions *repetitions, ContextHash hash) {
+bool is_repetition_draw(StateRepetitions *repetitions, ContextHash hash) {
     return n_state_repetitions(repetitions, hash) >= N_REPETITIONS_DRAW;
 }
 
-bool will_be_draw(StateRepetitions *repetitions, ContextHash hash) {
+bool will_be_repetition_draw(StateRepetitions *repetitions, ContextHash hash) {
     return n_state_repetitions(repetitions, hash) >= N_REPETITIONS_DRAW - 1;
 }
 

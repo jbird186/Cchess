@@ -38,11 +38,21 @@ int main(int argc, char **argv) {
 
     bool auto_play_white = false, auto_play_black = false;
     bool lock_display = DEFAULT_LOCK_DISPLAY;
+    bool display_as_white = true;
     for (;;) {
         char input[256] = "";
-        bool display_as_white = lock_display ? display_as_white : context.is_white;
+        display_as_white = lock_display ? display_as_white : context.is_white;
         print_board(&context, display_as_white);
-        printf("Evaluation (+ white): %d\n", evaluate(&context) * (context.is_white ? 1 : -1));
+
+        if (SHOW_EVALUATION) {
+            printf("Evaluation (White): ");
+            float raw_eval = evaluate(&context) * (context.is_white ? 1 : -1);
+            if (raw_eval >= 0) {
+                printf("+");
+            }
+            printf("%0.2f\n", raw_eval / 1000);
+        }
+
         // printf("HASH: %lu %lu\n", context.hash.alpha, context.hash.beta);
         // printf("Repetitions: %u\n", state_repetitions(&history, context.hash));
 
@@ -87,7 +97,7 @@ int main(int argc, char **argv) {
             break;
         }
 
-        if (is_draw(&history.repetitions, context.hash)) {
+        if (is_repetition_draw(&history.repetitions, context.hash)) {
             printf("Draw by repetition.\n");
             break;
         }
