@@ -38,10 +38,7 @@ uint8_t QUEEN_POSSIBLE_N_MOVES_TABLE[64];
             \
             (move_n_table_name)[(y << 3) + x] = move_list.n_moves; \
         } \
-    } \
-    // for (int i = 0; i <= 63; i++) { \
-    //     printf("W: %d, ID: %d, POS: %u, ATTACK MAP: %lu, N MOVES: %u\n", is_white, piece_type, i, attack_table_name[i], move_n_table_name[i]); \
-    // }
+    }
 
 #define INIT_PIECE_TABLE(piece_type, pseudo_legal_move_gen, attack_table_name, move_n_table_name) \
     INIT_PAWN_TABLE(piece_type, pseudo_legal_move_gen, attack_table_name, move_n_table_name, 0, 7, true)
@@ -65,8 +62,6 @@ void init_precomp(void) {
 
 uint64_t get_piece_possible_attack_bb(Piece piece, bool is_white) {
     switch(piece.type) {
-        case NullPiece:
-            return 0;
         case Pawn:
             if (is_white) {
                 return WHITE_PAWN_POSSIBLE_ATTACK_BB_TABLE[(piece.y << 3) + piece.x];
@@ -83,13 +78,13 @@ uint64_t get_piece_possible_attack_bb(Piece piece, bool is_white) {
             return ROOK_POSSIBLE_ATTACK_BB_TABLE[(piece.y << 3) + piece.x];
         case Queen:
             return QUEEN_POSSIBLE_ATTACK_BB_TABLE[(piece.y << 3) + piece.x];
+        default:
+            return 0;
     }
 }
 
 uint8_t get_piece_possible_n_moves(Piece piece, bool is_white) {
     switch(piece.type) {
-        case NullPiece:
-            return 0;
         case Pawn:
             if (is_white) {
                 return WHITE_PAWN_POSSIBLE_N_MOVES_TABLE[(piece.y << 3) + piece.x];
@@ -106,5 +101,7 @@ uint8_t get_piece_possible_n_moves(Piece piece, bool is_white) {
             return ROOK_POSSIBLE_N_MOVES_TABLE[(piece.y << 3) + piece.x];
         case Queen:
             return QUEEN_POSSIBLE_N_MOVES_TABLE[(piece.y << 3) + piece.x];
+        default:
+            return 0;
     }
 }

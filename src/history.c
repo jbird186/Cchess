@@ -19,7 +19,7 @@ void free_state_repetitions(StateRepetitions *repetitions) {
 }
 
 void append_state_repetition(StateRepetitions *repetition, ContextHash hash) {
-    for (int i = 0; i < repetition->n_entries; i++) {
+    for (uint32_t i = 0; i < repetition->n_entries; i++) {
         if (is_hash_eq(repetition->hashes[i], hash)) {
             repetition->entries[i]++;
             return;
@@ -31,7 +31,7 @@ void append_state_repetition(StateRepetitions *repetition, ContextHash hash) {
 }
 
 void remove_state_repetition(StateRepetitions *repetition, ContextHash hash) {
-    for (int i = 0; i < repetition->n_entries; i++) {
+    for (uint32_t i = 0; i < repetition->n_entries; i++) {
         if (is_hash_eq(repetition->hashes[i], hash)) {
             repetition->entries[i]--;
             if (repetition->entries[i] == 0) {
@@ -53,7 +53,7 @@ void _state_repetition_branch(StateRepetitions *original, StateRepetitions *bran
 }
 
 uint8_t n_state_repetitions(StateRepetitions *repetitions, ContextHash hash) {
-    for (int i = 0; i < repetitions->n_entries; i++) {
+    for (uint32_t i = 0; i < repetitions->n_entries; i++) {
         if (is_hash_eq(repetitions->hashes[i], hash)) {
             return repetitions->entries[i];
         }

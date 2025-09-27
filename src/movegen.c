@@ -217,7 +217,6 @@ MoveList get_pseudo_legal_moves_rook(PlyContext *context, uint8_t piece_id) {
 // That is, it does not account for queen moves which put their own king in check.
 // Does *not* ensure that the given piece is a queen.
 MoveList get_pseudo_legal_moves_queen(PlyContext *context, uint8_t piece_id) {
-    Piece piece = context->our_pieces[piece_id];
     MoveList rook_moves = get_pseudo_legal_moves_rook(context, piece_id);
     MoveList bishop_moves = get_pseudo_legal_moves_bishop(context, piece_id);
 
@@ -497,7 +496,6 @@ uint64_t perft(PlyContext *context, uint8_t depth) {
     }
 
     MoveList legal_moves = get_all_legal_moves(context);
-    PlyContext branch;
     uint64_t total = 0;
     for (int i = 0; i < legal_moves.n_moves; i++) {
         PlyContext branch;

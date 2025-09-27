@@ -121,6 +121,24 @@ int main(int argc, char **argv) {
         }
 
         // Reset the board
+        if (strcmp(input, "help") == 0) {
+            printf("Available commands:\n");
+            printf("\thelp\t\tDisplay a list of available commands.\n");
+            printf("\texit\t\tExit the program.\n");
+            printf("\treset\t\tReset the board and clear history.\n");
+            printf("\tback [n]\tUndo previous 'n' moves (default 1).\n");
+            printf("\tlock\t\tLock board orientation to current player's perspective.\n");
+            printf("\tunlock\t\tUnlock board orientation to switch between each player's perspective.\n");
+            printf("\thistory\t\tDisplay move history.\n");
+            printf("\tlist\t\tList all legal moves for current position.\n");
+            printf("\tperft <depth>\tCount all possible positions up to 'depth', starting from the current position.\n");
+            printf("\tplay\t\tComputer makes the best move for the current player.\n");
+            printf("\tauto\t\tEnable automatic play for the current player.\n");
+            printf("\t<move>\t\tEnter a legal move in algebraic coordinates (e.g., e2e4, g7g8q). Promotion suffixes: n=Knight, b=Bishop, r=Rook, q=Queen.\n");
+            continue;
+        }
+
+        // Reset the board
         if (strcmp(input, "reset") == 0) {
             print_history(&history);
             clear_history(&history);
@@ -153,7 +171,7 @@ int main(int argc, char **argv) {
 
             printf("%u move%s sucessfully undone:", depth, depth == 1 ? "" : "s");
             char move_str[6];
-            for (int i = 0; i < depth; i++) {
+            for (uint32_t i = 0; i < depth; i++) {
                 pop_history(&history, &context, move_str);
                 printf(" %s", move_str);
             }

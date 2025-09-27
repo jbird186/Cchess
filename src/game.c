@@ -6,8 +6,6 @@
 char get_piece_type_char(PieceType type, bool is_white) {
     uint8_t shift = is_white ? 0 : 32;
     switch (type) {
-        case NullPiece:
-            return ' ';
         case King:
             return 'K' + shift;
         case Pawn:
@@ -20,6 +18,8 @@ char get_piece_type_char(PieceType type, bool is_white) {
             return 'R' + shift;
         case Queen:
             return 'Q' + shift;
+        default:
+            return ' ';
     }
 }
 
@@ -63,7 +63,7 @@ void print_history(GameHistory *history) {
     if (history->length == 0) {
         printf(" None");
     }
-    for (int i = 0; i < history->length; i++) {
+    for (uint32_t i = 0; i < history->length; i++) {
         printf(" %s", history->moves[i]);
     }
     printf("\n\n");
