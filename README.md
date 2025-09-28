@@ -46,7 +46,7 @@ Here is a list of the available commands:
 * `auto`: Enable automatic play for the current player.
 * `<move>`: Enter a legal move in algebraic coordinates (e.g., `e2e4`, `g7g8q`). Promotion suffixes: `n`=Knight, `b`=Bishop, `r`=Rook, `q`=Queen.
 
-Some commands can be preloaded when launching the engine. For example:
+Some commands can be preloaded when launching the engine. Commands are executed in order, allowing you to start the engine with predefined behavior without interactive input. For example:
 
 ```bash
 ./build/bin/chess auto lock
@@ -54,8 +54,6 @@ Some commands can be preloaded when launching the engine. For example:
 
 * `auto`: Sets the current player (white at start) to be controlled by the engine.
 * `lock`: Locks the board orientation to the perspective of the current player (now black).
-
-Commands are executed in order, allowing you to start the engine with predefined behavior without interactive input.
 
 ## Config
 

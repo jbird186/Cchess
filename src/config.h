@@ -1,8 +1,6 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#include "types.h"
-
 ///// Piece Values /////
 #define PAWN_BASE_VALUE 1000
 #define KNIGHT_BASE_VALUE 3000
