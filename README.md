@@ -61,4 +61,4 @@ Configurable options are defined in [`./src/config.h`](./src/config.h). Any chan
 
 ## License
 
-This project is open source and licensed under the MIT license. see the [`LICENSE`](LICENSE) file for more details.
+This project is open source and licensed under the BSD 3-Clause License. see the [`LICENSE`](LICENSE) file for more details.
