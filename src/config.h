@@ -9,8 +9,8 @@
 #define QUEEN_BASE_VALUE 9000
 
 ///// Game End Values /////
-#define WIN_VALUE 1000000000
-#define LOSS_VALUE -1000000000
+#define WIN_VALUE 1000000
+#define LOSS_VALUE -1000000
 #define DRAW_VALUE -100
 
 ///// Other Evaluation Values /////
@@ -20,7 +20,7 @@
 ///// Game Configuration /////
 #define DEFAULT_LOCK_DISPLAY false
 #define SHOW_EVALUATION false
-#define MOVE_SEARCH_DEPTH 6
+#define MOVE_SEARCH_DEPTH 5
 #define MOVE_CACHE_SIZE_BYTES (uint64_t)(256 * 1024 * 1024)
 #define MAX_GAME_PLY 1024
 

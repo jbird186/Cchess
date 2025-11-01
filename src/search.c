@@ -8,6 +8,7 @@
 #include "config.h"
 #include "hash.h"
 #include "history.h"
+#include "position.h"
 
 const uint64_t MOVE_CACHE_SIZE = MOVE_CACHE_SIZE_BYTES / sizeof(BestMoveCacheEntry);
 
@@ -65,8 +66,13 @@ BestMove _get_best_move_ab(StateRepetitions *repetitions, PlyContext *context, i
         if (is_repetition_draw(&reps_branch, branch.hash)) {
             branch_score = DRAW_VALUE;
         } else {
-            BestMove opponent_best = _get_best_move_ab(&reps_branch, &branch, depth - 1, cache, -ceiling, -floor);
+            int32_t new_depth = (
+                (depth == 1) && (GET_MOVE_BB_MASK(legal_moves.moves[i]) & branch.our_bb)
+            ) ? 1 : depth - 1;
+
+            BestMove opponent_best = _get_best_move_ab(&reps_branch, &branch, new_depth, cache, -ceiling, -floor);
             branch_score = -opponent_best.score;
+            branch_score += branch_score > 0 ? -1: 1;
         }
         free_state_repetitions(&reps_branch);
 

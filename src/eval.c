@@ -28,21 +28,21 @@ int32_t get_pawn_y_bonus(uint8_t y, bool is_white) {
 }
 
 int32_t evaluate_material(PlyContext *context) {
-    int32_t total = 0;
+    int32_t our_total = 0, enemy_total = 0;
     for (int i = 0; i < 16; i++) {
-        total += get_piece_base_value(context->our_pieces[i]);
-        total += PIECE_POSSIBLE_MOVES_BONUS_MULTIPLIER * get_piece_possible_n_moves(context->our_pieces[i], context->is_white);
+        our_total += get_piece_base_value(context->our_pieces[i]);
+        our_total += PIECE_POSSIBLE_MOVES_BONUS_MULTIPLIER * get_piece_possible_n_moves(context->our_pieces[i], context->is_white);
         if (context->our_pieces[i].type == Pawn) {
-            total += get_pawn_y_bonus(context->our_pieces[i].y, context->is_white);
+            our_total += get_pawn_y_bonus(context->our_pieces[i].y, context->is_white);
         }
 
-        total -= get_piece_base_value(context->opponent_pieces[i]);
-        total -= PIECE_POSSIBLE_MOVES_BONUS_MULTIPLIER * get_piece_possible_n_moves(context->opponent_pieces[i], !context->is_white);
+        enemy_total += get_piece_base_value(context->opponent_pieces[i]);
+        enemy_total += PIECE_POSSIBLE_MOVES_BONUS_MULTIPLIER * get_piece_possible_n_moves(context->opponent_pieces[i], !context->is_white);
         if (context->opponent_pieces[i].type == Pawn) {
-            total -= get_pawn_y_bonus(context->opponent_pieces[i].y, !context->is_white);
+            enemy_total += get_pawn_y_bonus(context->opponent_pieces[i].y, !context->is_white);
         }
     }
-    return total;
+    return (10000 * (our_total - enemy_total)) / our_total;
 }
 
 int32_t evaluate_with(PlyContext *context, MoveList legal_moves) {
